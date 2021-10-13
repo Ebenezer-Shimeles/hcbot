@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_tgbot',
-    'hidden_chat_bot'
+    'hidden_chat_bot',
+    'main'
 ]
 
 MIDDLEWARE = [
