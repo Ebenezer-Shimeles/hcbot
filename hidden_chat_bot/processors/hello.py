@@ -5,7 +5,21 @@ from hidden_chat_bot.bot import state_manager
 from hidden_chat_bot.models import TelegramState
 from hidden_chat_bot.bot import TelegramBot
 
-
-@processor(state_manager, from_states=state_types.All)
+from hidden_chat_bot.processors  import strings  as STRINGS
+@processor(
+    state_manager, 
+    from_states=state_types.All,
+    update_types= [update_types.Message],
+    message_types=[message_types.Text]
+)
 def hello_world(bot: TelegramBot, update: Update, state: TelegramState):
-    bot.sendMessage(update.get_chat().get_id(), 'Hello!')
+    chat = update.get_chat()
+    chat_id = chat.get_id()
+    message = update.get_message()
+    message_text = message.get_text()
+    
+    if not message_text.startswith("/start"):
+        return
+    bot.sendMessage(chat_id, 
+           STRINGS.HELLO_INTRO
+    )
