@@ -18,8 +18,8 @@ def hello_world(bot: TelegramBot, update: Update, state: TelegramState):
     message = update.get_message()
     message_text = message.get_text()
     
-    if not message_text == "/start":
+    if not message_text == "/register":
         return
     bot.sendMessage(chat_id, 
-           STRINGS.HELLO_INTRO
+           STRINGS.SEND_NAME
     )
