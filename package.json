@@ -1,0 +1,24 @@
+{
+  "name": "hiddenchatbot",
+  "version": "1.0.0",
+  "description": "(c)  2022 Ebenezer Tesfaye AKA silent storm",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js localhost 8000"
+  },
+  "keywords": [
+    "Silent",
+    "Storm",
+    "Project"
+  ],
+  "author": "Silent Storm",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  },
+  "dependencies": {
+    "express": "^4.17.2",
+    "node-telegram-bot-api": "^0.56.0"
+  }
+}
