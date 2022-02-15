@@ -1,10 +1,14 @@
 const Bot = require('node-telegram-bot-api');
+const DotEnv = require("dotenv");
+
+DotEnv.config();
+
 const HC = new
-    Bot('1938379585:AAE-hq9Sjsms2g7lf3EPD34V_goB9O_y_DA', { polling: false })
+    Bot(process.env.BOT_TOKEN, { polling: false })
 
 
 
 
 
-HC.setWebHook("https://80d7-197-156-95-122.ngrok.io")
+HC.setWebHook("https://a012-197-156-95-71.ngrok.io")
 module.exports = HC 
