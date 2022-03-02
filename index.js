@@ -12,7 +12,10 @@ const createHeaders = require("./commands/create");
 const talkToHandle = require("./commands/talkto");
 const myLinkHeaders = require("./commands/mylink");
 
-const { User, createUser } = require("./models/user.js");
+const { User, createUser, setUserState, setUserStateVal } = require("./models/user.js");
+
+const { reportToAdmin } = require("./utils");
+require("dotenv").config()
 
 const commands = { ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders };
 
@@ -34,11 +37,21 @@ HC.on('new_chat_members', (msgData) => {
     if (chatType == 'group' || chatType == 'supergroup') {
         HC.sendMessage(chatId, "I do not work in groups sorry!");
         HC.leaveChat(chatId);
+
     }
 });
 
-registerCallbackSKWHandler(REPLY, ({ callbackData }) => {
-    HC.sendMessage("556659349", "S");
+registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
+    //HC.sendMessage("556659349", "S");
+    const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
+    const otherData = callbackData.data.split(process.env.DIFF_CHAR)[1];
+    if (!user) return reportToAdmin("Empty reply called bro!");
+    if ((!await User.findOne({ where: { tg_id: otherData } }))) HC.sendMessage(user.tg_id, "This user doesn't exist!");
+    if (!await setUserState(user.tg_id, SEMSG)) return reportToAdmin("Error cannot change user state");
+    if (!await setUserStateVal(user.tg_id, otherData)) return reportToAdmin("Error cannot change state val");
+    HC.sendMessage(callbackData.from.id, "Please send me the text you want to send:");
+
+
 });
 registerCallbackSKWHandler(BLOCK, ({ callbackData }) => {
     HC.sendMessage("556659349", "BLCOK")
@@ -54,7 +67,7 @@ HC.on('callback_query', async (callbackData) => {
 
     if (!user) user = await createUser(fromId, "Anon");
 
-    const keyWord = data.split('-')[0];
+    const keyWord = data.split(process.env.DIFF_CHAR)[0];
 
 
     HC.sendMessage("556659349", keyWord);
@@ -110,18 +123,19 @@ registerStateHandler(SEMSG, async ({ msgData }) => {
                 inline_keyboard: [
                     [{
                         text: "Reply",
-                        callback_data: `${REPLY}-${user.tg_id}`
+                        callback_data: `${REPLY}${process.env.DIFF_CHAR}${user.tg_id}`
                     },
                     {
-                        text: "Block this user",
-                        callback_data: `${BLOCK}-${user.tg_id}`
+                        text: "Block This User",
+                        callback_data: `${BLOCK}${process.env.DIFF_CHAR}${user.tg_id}`
                     }]
                 ]
             }
         });
+    if (!await setUserState(user.tg_id, "")) reportToAdmin("Error cannot change user state");
 });
 HC.on('text', async (msg) => {
-    const user = await User.findOne({ where: { tg_id: msg.chat.id } });
+    let user = await User.findOne({ where: { tg_id: msg.chat.id } });
     console.log("user: " + JSON.stringify(user));
     const state = user ? user.state : console.log("No state user");
 
@@ -131,6 +145,10 @@ HC.on('text', async (msg) => {
         handleState(await user.state, { msgData: msg, inlineData: {}, callbackData: {} });
     }
     else if (msg.text.startsWith("/start") && msg.text != "/start") {
+        if (!user) {
+            reportToAdmin("Doesn't exist");
+            user = await createUser(msg.chat.id, "Anon")
+        }
         const payload = msg.text.split("/start")[1];
         //HC.sendMessage(msg.chat.id, "Deeplinking, " + payload);
         const wantsToTalkto = await User.findOne({
@@ -138,15 +156,18 @@ HC.on('text', async (msg) => {
                 link: payload.trim()
             }
         })
-        if (!wantsToTalkto) return HC.sendMessage(msg.chat.id, "This link does not exist bitch")
-        await User.update({
-            state: SEMSG,
-            stateVal: wantsToTalkto.tg_id
-        }, {
-            where: {
-                tg_id: msg.chat.id
-            }
-        });
+        if (!wantsToTalkto) return HC.sendMessage(msg.chat.id, "This link does not exist!")
+        // await User.update({
+        //     state: SEMSG,
+        //     stateVal: wantsToTalkto.tg_id
+        // }, {
+        //     where: {
+        //         tg_id: msg.chat.id
+        //     }
+        // });
+        reportToAdmin(`${msg.chat.id} to ${wantsToTalkto.tg_id}`);
+        if (!await setUserState(msg.chat.id, SEMSG)) return reportToAdmin("Error cannot change user state");
+        if (!await setUserStateVal(msg.chat.id, `${wantsToTalkto.tg_id}`)) return reportToAdmin("Error cannot change user state val");
         HC.sendMessage(msg.chat.id, "Send me the message you want to send!");
 
     }
@@ -158,7 +179,8 @@ HC.on('text', async (msg) => {
             commands["unknown"](HC, msg)
     }
     else {
-        HC.sendMessage("556659349", "Uknown usage!");
+        commands["unknown"](HC, msg);
+        // HC.sendMessage("556659349", "Uknown usage!");
     }
 })
 

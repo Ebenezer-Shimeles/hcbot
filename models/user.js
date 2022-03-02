@@ -3,11 +3,12 @@ const Db = require("./db");
 
 const Sequelize = require("sequelize");
 const { DataTypes } = Sequelize;
-const { getRandomInt, encrypt } = require("../utils")
+const { getRandomInt, encrypt, reportToAdmin } = require("../utils")
 const { isAlphaNumeric } = require("../utils");
 
 const DotEnv = require("dotenv");
 const { is } = require("express/lib/request");
+const { where } = require("sequelize");
 //const Sequelize = require("sequelize");
 
 DotEnv.config();
@@ -52,6 +53,56 @@ const User = Db.define("users", {
 
 
 
+const setUserState = async (userId, state) => {
+    let user = await User.findOne({ where: { tg_id: userId } });
+    if (!user) {
+        user = await createUser(userId, "Anon");
+    };
+    reportToAdmin(`state.of(${user.tg_id}) = ${state}`)
+    await User.update(
+        {
+            state: `${state}`
+        },
+        {
+            where: {
+                tg_id: user.tg_id
+            }
+        }
+    );
+    user = await User.findOne({ where: { tg_id: userId } });
+    reportToAdmin(`state.of(${user.tg_id}) = ${user.state}`)
+    return true;
+}
+const setUserStateVal = async (userId, stateVal) => {
+    const user = await User.findOne({ where: { tg_id: userId } });
+    if (!user) return false;
+    await User.update(
+        {
+            stateVal
+        },
+        {
+            where: {
+                tg_id: user.tg_id
+            }
+        }
+    );
+    return true;
+}
+const setUSerStateVal2 = async (userId, stateVal2) => {
+    const user = await User.findOne({ where: { tg_id: userId } });
+    if (!user) return false;
+    await User.update(
+        {
+            stateVal2
+        },
+        {
+            where: {
+                tg_id: user.tg_id
+            }
+        }
+    );
+    return true;
+}
 const genLink = (tgId) => {
     // let llink = await encrypt(tg_id.toString());
 
@@ -99,5 +150,8 @@ Db.authenticate()
 
 module.exports = {
     User,
-    createUser
+    createUser,
+    setUSerStateVal2,
+    setUserState,
+    setUserStateVal
 }

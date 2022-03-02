@@ -1,7 +1,7 @@
 const crypto = require("crypto")
 
 require("dotenv").config();
-const { HC } = require("./bot");
+const HC = require("./bot");
 
 const getRandomInt = (min, max) => {
     const randD = Math.random();
