@@ -12,4 +12,4 @@ const Actions = DB.define("actions", {
     { freezeTablename: true }
 )
 
-Actions.sync({ alter: true });
+//Actions.sync({ alter: true });

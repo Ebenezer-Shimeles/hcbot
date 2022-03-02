@@ -3,7 +3,11 @@ const Db = require("./db");
 
 const Sequelize = require("sequelize");
 const { DataTypes } = Sequelize;
+const { getRandomInt, encrypt } = require("../utils")
+const { isAlphaNumeric } = require("../utils");
+
 const DotEnv = require("dotenv");
+const { is } = require("express/lib/request");
 //const Sequelize = require("sequelize");
 
 DotEnv.config();
@@ -25,8 +29,20 @@ const User = Db.define("users", {
     link: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
-    }
+        unique: true,
+        // get() {
+        //     return + "t.me/hidden_chat_bot?start=" + this.getDataValue('link');
+        // }
+    },
+    state: {
+        type: DataTypes.STRING
+    },
+    stateVal: {
+        type: DataTypes.STRING
+    },
+    stateVal2: {
+        type: DataTypes.STRING
+    },
 
 }, {
     freezeTablename: true,
@@ -34,6 +50,41 @@ const User = Db.define("users", {
 }
 );
 
+
+
+const genLink = (tgId) => {
+    // let llink = await encrypt(tg_id.toString());
+
+    // llink = link.split("")
+    //     .filter(data => data != '$' && data != '*' && data != ';' && data != ';' && data != '-')
+    //     .forEach(char => link += char)
+    let link = "";
+    let encryptor = require('simple-encryptor')("aaaaaaaaaaaaaaaa");
+
+    tmpLink = encryptor.encrypt(tgId.toString())
+    tmpLink.split('')
+        .forEach(data => {
+            if (isAlphaNumeric(data)) link += data;
+        })
+    let randomInt = getRandomInt(0, tmpLink.length - 20);
+    return link.substring(randomInt, randomInt + 10);
+
+}
+const createUser = async (tg_id, tg_name) => {
+    //let link = crypto.randomBytes(5).toString("hex");
+    // const salt = process.env.LINK_SALT.toString();
+    //console.log(`Salt: ${salt}`)
+    let link = genLink(tg_id)
+
+
+    const user = User.build({
+        tg_id,
+        tg_name,
+        link
+    });
+    await user.save();
+    return user;
+}
 
 User.hasOne(User, { foreignKey: "talking_to" });
 User.belongsToMany(User, { as: "blocked", foreignKey: "blocked_id", through: "blocks" });
@@ -48,5 +99,5 @@ Db.authenticate()
 
 module.exports = {
     User,
-
+    createUser
 }
