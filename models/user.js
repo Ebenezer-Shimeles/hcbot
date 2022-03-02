@@ -51,6 +51,33 @@ const User = Db.define("users", {
 }
 );
 
+// const Block = Db.define("blocks", {
+//   blocked_id : {
+//       type: DataTypes.INTEGER,
+//       allowNull: false,
+//   },
+
+// },
+// {
+
+// });
+User.hasOne(User, { foreignKey: "talking_to" });
+User.belongsToMany(User, { as: "blocked", foreignKey: "blocked_id", through: "blocks" });
+User.belongsToMany(User, { as: "blocker", foreignKey: "blocker_id", through: "blocks" });
+const getUserBlocks = async (userId) => {
+    let user = await User.findOne({ where: { tg_id: userId }, include: { model: User, as: 'blocked' } });;
+    if (!user) user = await createUser(userId, "Anon");
+    const blocks = [];
+    if (!user.blocked) return [];
+    reportToAdmin("blckk:" + JSON.stringify(user.blocked))
+    user.blocked
+
+        .forEach((element) => {
+            blocks.push({ tg_id: element.tg_id, tg_name: element.tg_name, link: element.link })
+        })
+    reportToAdmin("Blocks " + JSON.stringify(blocks))
+    return blocks;
+}
 
 
 const setUserState = async (userId, state) => {
@@ -137,13 +164,10 @@ const createUser = async (tg_id, tg_name) => {
     return user;
 }
 
-User.hasOne(User, { foreignKey: "talking_to" });
-User.belongsToMany(User, { as: "blocked", foreignKey: "blocked_id", through: "blocks" });
-User.belongsToMany(User, { as: "blocker", foreignKey: "blocker_id", through: "blocks" })
 
 Db.authenticate()
 
-    .then(() => Db.sync({ force: true }))
+    //.then(() => Db.sync({ force: true }))
 
 
     .catch(e => console.error(`Error ${e}`))
@@ -153,5 +177,6 @@ module.exports = {
     createUser,
     setUSerStateVal2,
     setUserState,
-    setUserStateVal
+    setUserStateVal,
+    getUserBlocks
 }

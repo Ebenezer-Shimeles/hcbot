@@ -3,7 +3,7 @@ const express = require("express");
 
 const HC = require('./bot');
 
-const { handleState, registerStateHandler, TTGK, SEMSG, registerCallbackSKWHandler, BLOCK, REPLY, handleCallbackKw } = require("./commands/states");
+const { handleState, registerStateHandler, TTGK, SEMSG, registerCallbackSKWHandler, BLOCK, UNBLOCK, REPLY, handleCallbackKw } = require("./commands/states");
 
 const startHeaders = require("./commands/start");
 const unknownHeaders = require("./commands/unknown");
@@ -11,13 +11,15 @@ const creditsHeaders = require("./commands/credits")
 const createHeaders = require("./commands/create");
 const talkToHandle = require("./commands/talkto");
 const myLinkHeaders = require("./commands/mylink");
+const myBlocksHeaders = require("./commands/myblocks");
+const helpHeaders = require("./commands/help");
 
-const { User, createUser, setUserState, setUserStateVal } = require("./models/user.js");
+const { User, createUser, setUserState, setUserStateVal, } = require("./models/user.js");
 
 const { reportToAdmin } = require("./utils");
 require("dotenv").config()
 
-const commands = { ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders };
+const commands = { ...helpHeaders, ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders, ...myBlocksHeaders };
 
 app = express()
 app.get('/', (req, res) => {
@@ -41,6 +43,15 @@ HC.on('new_chat_members', (msgData) => {
     }
 });
 
+registerCallbackSKWHandler(UNBLOCK, async ({ callbackData }) => {
+    const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
+    const otherData = callbackData.data.split(process.env.DIFF_CHAR)[1];
+    if (!user) return reportToAdmin("Empty reply called bro!");
+    const unblocked = await User.findOne({ where: { tg_id: otherData } });
+    if ((!unblocked)) HC.sendMessage(user.tg_id, "This user doesn't exist!");
+    await user.removeBlocked(unblocked);
+    HC.sendMessage(callbackData.from.id, "Unblock successful")
+});
 registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
     //HC.sendMessage("556659349", "S");
     const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
@@ -53,8 +64,14 @@ registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
 
 
 });
-registerCallbackSKWHandler(BLOCK, ({ callbackData }) => {
-    HC.sendMessage("556659349", "BLCOK")
+registerCallbackSKWHandler(BLOCK, async ({ callbackData }) => {
+    const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
+    const otherData = callbackData.data.split(process.env.DIFF_CHAR)[1];
+    if (!user) return reportToAdmin("Empty reply called bro!");
+    const blocked = await User.findOne({ where: { tg_id: otherData } })
+    if (!(blocked)) return HC.sendMessage(callbackData.from.id, "The use does not exist!");
+    await user.addBlocked(blocked);
+    HC.sendMessage(`${callbackData.from.id}`, `The user ${blocked.tg_name} has been blocked! to unblock use /myblocks`);
 });
 HC.on('callback_query', async (callbackData) => {
     // HC.sendMessage(callbackData.from.id, callbackData.data);
@@ -105,12 +122,20 @@ registerStateHandler(TTGK, async ({ msgData }) => {
 registerStateHandler(SEMSG, async ({ msgData }) => {
     const msg = msgData;
     const user = await User.findOne({ where: { tg_id: msg.chat.id } });
-    HC.sendMessage(msg.chat.id, "sent!");
+
     const reciever = await User.findOne({
         where: {
             tg_id: user.stateVal
         }
     });
+    if (!reciever) return HC.sendMessage(msgData.chat.id, "The user does not exist!");
+
+    if (await reciever.hasBlocked(user)) {
+        HC.sendMessage(msg.chat.id, "This user has blocked you!");
+        return;
+    }
+    HC.sendMessage(msg.chat.id, "sent!");
+
     HC.sendMessage(reciever.tg_id,
 
         "<b>from: " + `${user.tg_name}\n</b>` +

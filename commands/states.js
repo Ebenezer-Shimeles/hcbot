@@ -9,6 +9,7 @@ const SEMSG = "SENDINGMESSAGE";
 
 /////////////callback keywords
 const BLOCK = 'bl'
+const UNBLOCK = 'un'
 const REPLY = 'rep'
 
 
@@ -55,5 +56,6 @@ module.exports = {
     TTGK,
     SEMSG,
     BLOCK,
-    REPLY
+    REPLY,
+    UNBLOCK
 }
