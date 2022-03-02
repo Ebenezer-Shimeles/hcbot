@@ -3,7 +3,7 @@ const express = require("express");
 
 const HC = require('./bot');
 
-const { handleState, registerStateHandler, TTGK, SEMSG } = require("./commands/states");
+const { handleState, registerStateHandler, TTGK, SEMSG, registerCallbackSKWHandler, BLOCK, REPLY, handleCallbackKw } = require("./commands/states");
 
 const startHeaders = require("./commands/start");
 const unknownHeaders = require("./commands/unknown");
@@ -12,7 +12,7 @@ const createHeaders = require("./commands/create");
 const talkToHandle = require("./commands/talkto");
 const myLinkHeaders = require("./commands/mylink");
 
-const { User } = require("./models/user.js");
+const { User, createUser } = require("./models/user.js");
 
 const commands = { ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders };
 
@@ -28,37 +28,103 @@ app.post('/', (req, res) => {
     res.end("ok")
 })
 
-HC.onText(/ * /, (msg, match) => {
-    HC.sendMessage(msg.chat.id, "match");
-    console.log("MATCHO")
+HC.on('new_chat_members', (msgData) => {
+    const chatType = msgData.chat.type;
+    const chatId = msgData.chat.id;
+    if (chatType == 'group' || chatType == 'supergroup') {
+        HC.sendMessage(chatId, "I do not work in groups sorry!");
+        HC.leaveChat(chatId);
+    }
 });
-HC.on('message', async (msg) => {
+
+registerCallbackSKWHandler(REPLY, ({ callbackData }) => {
+    HC.sendMessage("556659349", "S");
+});
+registerCallbackSKWHandler(BLOCK, ({ callbackData }) => {
+    HC.sendMessage("556659349", "BLCOK")
+});
+HC.on('callback_query', async (callbackData) => {
+    // HC.sendMessage(callbackData.from.id, callbackData.data);
+    if (callbackData.chat_instance == 'group' || callbackData.chat_instance == 'supergroup') return;
+    //check uppper pls
+
+    const data = callbackData.data;
+    const fromId = callbackData.from.id;
+    let user = await User.findOne({ where: { tg_id: fromId } });
+
+    if (!user) user = await createUser(fromId, "Anon");
+
+    const keyWord = data.split('-')[0];
+
+
+    HC.sendMessage("556659349", keyWord);
+    handleCallbackKw(keyWord, { callbackData });
+
+    // if (user.state) {
+    //     HC.sendMessage(msg.chat.id, "You have a state: " + state);
+    //     handleState(await user.state, { msgData: {}, inlineData: {}, callbackData });
+    // }
+    // else {
+    //     HC.sendMessage("556659349", keyWord);
+    // }
+});
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+registerStateHandler(TTGK, async ({ msgData }) => {
+    //HC.sendMessage(msgData.chat.id, msgData.text)
+    const msg = msgData;
+    const user = await User.findOne({ where: { tg_id: msg.chat.id } });
+    //register talk to name
+    await User.update({
+        stateVal: msgData.text,
+        state: SEMSG
+    }, {
+        where: {
+            tg_id: user.tg_id
+        }
+    });
+    HC.sendMessage(msgData.chat.id, "Ok send me the message you want to send");
+});
+registerStateHandler(SEMSG, async ({ msgData }) => {
+    const msg = msgData;
+    const user = await User.findOne({ where: { tg_id: msg.chat.id } });
+    HC.sendMessage(msg.chat.id, "sent!");
+    const reciever = await User.findOne({
+        where: {
+            tg_id: user.stateVal
+        }
+    });
+    HC.sendMessage(reciever.tg_id,
+
+        "<b>from: " + `${user.tg_name}\n</b>` +
+        `Msg: <i>${msg.text}</i>`,
+
+        {
+            parse_mode: "HTML",
+
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: "Reply",
+                        callback_data: `${REPLY}-${user.tg_id}`
+                    },
+                    {
+                        text: "Block this user",
+                        callback_data: `${BLOCK}-${user.tg_id}`
+                    }]
+                ]
+            }
+        });
+});
+HC.on('text', async (msg) => {
     const user = await User.findOne({ where: { tg_id: msg.chat.id } });
     console.log("user: " + JSON.stringify(user));
     const state = user ? user.state : console.log("No state user");
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    registerStateHandler(TTGK, async ({ msgData }) => {
-        //HC.sendMessage(msgData.chat.id, msgData.text)
-        //register talk to name
-        await User.update({
-            stateVal: msgData.text,
-            state: SEMSG
-        }, {
-            where: {
-                tg_id: user.tg_id
-            }
-        });
-        HC.sendMessage(msgData.chat.id, "Ok send me the message you want to send");
-    });
-    registerStateHandler(SEMSG, async ({ msgData }) => {
-        HC.sendMessage(msg.chat.id, "sent!");
-        const reciever = await User.findOne({
-            where: {
-                tg_id: user.stateVal
-            }
-        });
-        HC.sendMessage(reciever.tg_id, msg.text);
-    });
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     if (state) {
         HC.sendMessage(msg.chat.id, "You have a state: " + state);

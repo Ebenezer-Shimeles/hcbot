@@ -6,6 +6,7 @@ DotEnv.config();
 const vars = process.env;
 const DB = new Sequelize(vars.DB_NAME, vars.DB_USER, vars.DB_PASS, {
     // host: "localhost",
+    logging: false,
     dialect: "mysql",
 });
 

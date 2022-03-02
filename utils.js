@@ -1,5 +1,8 @@
 const crypto = require("crypto")
 
+require("dotenv").config();
+const { HC } = require("./bot");
+
 const getRandomInt = (min, max) => {
     const randD = Math.random();
     const randMax = Math.ceil(randD * max);
@@ -33,9 +36,13 @@ function decrypt(text) {
     dec += decipher.final('utf8');
     return dec;
 }
+function reportToAdmin(msg, others = {}) {
+    HC.sendMessage(process.env.ADMIN_ID, msg, others);
+}
 module.exports = {
     encrypt,
     decrypt,
     getRandomInt,
-    isAlphaNumeric
+    isAlphaNumeric,
+    reportToAdmin
 }
