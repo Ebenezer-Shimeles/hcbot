@@ -3,7 +3,7 @@ const express = require("express");
 
 const HC = require('./bot');
 
-const { handleState, registerStateHandler, TTGK, SEMSG, registerCallbackSKWHandler, BLOCK, UNBLOCK, REPLY, handleCallbackKw } = require("./commands/states");
+const { handleState, registerStateHandler, TTGK, SEMSG, CHAGNAM, registerCallbackSKWHandler, BLOCK, UNBLOCK, REPLY, handleCallbackKw } = require("./commands/states");
 
 const startHeaders = require("./commands/start");
 const unknownHeaders = require("./commands/unknown");
@@ -13,13 +13,14 @@ const talkToHandle = require("./commands/talkto");
 const myLinkHeaders = require("./commands/mylink");
 const myBlocksHeaders = require("./commands/myblocks");
 const helpHeaders = require("./commands/help");
+const changeMyNameHeaders = require("./commands/changename");
 
 const { User, createUser, setUserState, setUserStateVal, } = require("./models/user.js");
 
 const { reportToAdmin } = require("./utils");
 require("dotenv").config()
 
-const commands = { ...helpHeaders, ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders, ...myBlocksHeaders };
+const commands = { ...changeMyNameHeaders, ...helpHeaders, ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders, ...myBlocksHeaders };
 
 app = express()
 app.get('/', (req, res) => {
@@ -104,6 +105,24 @@ HC.on('callback_query', async (callbackData) => {
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+registerStateHandler(CHAGNAM, async ({ msgData }) => {
+    const user = User.findOne({
+        where: {
+            tg_id: msgData.chat.id
+        }
+    }).then(data => {
+        if (!data) return;
+        else return User.update({
+            tg_name: msgData.text
+        },
+            {
+                where: {
+                    tg_id: msgData.chat.id
+                }
+            });
+    })
+        .then(() => HC.sendMessage(msgData.chat.id, "Change successful!"))
+});
 registerStateHandler(TTGK, async ({ msgData }) => {
     //HC.sendMessage(msgData.chat.id, msgData.text)
     const msg = msgData;
@@ -211,5 +230,5 @@ HC.on('text', async (msg) => {
 
 app.listen(8000, (e) => {
     if (e) console.error("Error " + e);
-    console.log("Listening at 8000")
+    else console.log("Listening at 8000")
 })

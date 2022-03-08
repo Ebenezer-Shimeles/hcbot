@@ -4,6 +4,7 @@ const { HC } = require("../bot");
 /////////////msg states
 const TTGK = "TALKTOGETSTATE";
 const SEMSG = "SENDINGMESSAGE";
+const CHAGNAM = "CHANGENAME";
 
 
 
@@ -57,5 +58,6 @@ module.exports = {
     SEMSG,
     BLOCK,
     REPLY,
-    UNBLOCK
+    UNBLOCK,
+    CHAGNAM
 }
