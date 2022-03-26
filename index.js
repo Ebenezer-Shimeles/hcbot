@@ -3,7 +3,7 @@ const express = require("express");
 
 const HC = require('./bot');
 
-const { handleState, registerStateHandler, TTGK, SEMSG, CHAGNAM, registerCallbackSKWHandler, BLOCK, UNBLOCK, REPLY, handleCallbackKw } = require("./commands/states");
+const { handleState, registerStateHandler, TTGK, CANCELREPLY,SEMSG, CHAGNAM, registerCallbackSKWHandler, BLOCK, UNBLOCK, REPLY, handleCallbackKw } = require("./commands/states");
 
 const startHeaders = require("./commands/start");
 const unknownHeaders = require("./commands/unknown");
@@ -53,9 +53,22 @@ registerCallbackSKWHandler(UNBLOCK, async ({ callbackData }) => {
     await user.removeBlocked(unblocked);
     HC.sendMessage(callbackData.from.id, "Unblock successful")
 });
+registerCallbackSKWHandler(CANCELREPLY, async ({callbackData}) =>{
+
+    const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
+    if(!user ) return;  //cancel works for accounts that exist
+
+    setUserState(user['tg_id'], "");
+
+    HC.answerCallbackQuery(callbackData.id, "Cancelled!");
+    HC.sendMessage(callbackData.message.chat.id, "Cancellled!");
+
+    
+
+});
 registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
     //HC.sendMessage("556659349", "S");
-    reportToAdmin("REPLY CLICKED");
+    //reportToAdmin("REPLY CLICKED");
     const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
     const otherData = callbackData.data.split(process.env.DIFF_CHAR)[1];
     const replyTo = callbackData.data.split(process.env.DIFF_CHAR)[2];
@@ -66,7 +79,19 @@ registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
     //the next one is to reply to make the confusion low
     reportToAdmin(`Registerting callback father: ${replyTo}`);
     if (!await setUSerStateVal2(user.tg_id, replyTo)) return reportToAdmin("Error cannot change state val 2");
-    HC.sendMessage(callbackData.from.id, "Please send me the message(text or image) you want to send for replying:");
+    HC.sendMessage(callbackData.from.id, "Please send me the message(text or image) you want to send for replying:",
+    {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        "callback_data": CANCELREPLY,
+                        "text": "Cancel"
+                    }
+                ]
+            ]
+        }
+    });
 
 
 });
@@ -219,7 +244,7 @@ HC.on('message',async (msg)=>{
          const state = user ? user.state : console.log("No state user");
 
          ///////////////////////////////////////////////////////////////////////////////////////////////
-        if (state && state === SEMSG) {
+        if (state && state === SEMSG) {  ///this is the only state that needs images
            HC.sendMessage(msg.chat.id, "You have a state: " + state);
             handleState(await user.state, { msgData: msg, inlineData: {}, callbackData: {} });
         }
@@ -265,7 +290,9 @@ HC.on('text', async (msg) => {
         reportToAdmin(`${msg.chat.id} to ${wantsToTalkto.tg_id}`);
         if (!await setUserState(msg.chat.id, SEMSG)) return reportToAdmin("Error cannot change user state");
         if (!await setUserStateVal(msg.chat.id, `${wantsToTalkto.tg_id}`)) return reportToAdmin("Error cannot change user state val");
-        HC.sendMessage(msg.chat.id, "Send me the message you want to send!");
+        HC.sendMessage(msg.chat.id, "Send me the message you want to send!", {
+           
+        });
 
     }
     else if (msg.text.startsWith('/')) {

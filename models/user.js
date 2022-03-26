@@ -85,7 +85,7 @@ const setUserState = async (userId, state) => {
     if (!user) {
         user = await createUser(userId, "Anon" + getRandomInt(1,100));
     };
-    reportToAdmin(`state.of(${user.tg_id}) = ${state}`)
+  //  reportToAdmin(`state.of(${user.tg_id}) = ${state}`)
     await User.update(
         {
             state: `${state}`
@@ -97,7 +97,7 @@ const setUserState = async (userId, state) => {
         }
     );
     user = await User.findOne({ where: { tg_id: userId } });
-    reportToAdmin(`state.of(${user.tg_id}) = ${user.state}`)
+    //reportToAdmin(`state.of(${user.tg_id}) = ${user.state}`)
     return true;
 }
 const setUserStateVal = async (userId, stateVal) => {
@@ -157,7 +157,7 @@ const createUser = async (tg_id, tg_name = undefined) => {
 
 Db.authenticate()
 
-    .then(() => Db.sync({ force:true }))
+    .then(() => Db.sync({ alter:true }))
 
 
     .catch(e => console.error(`Error ${e}`))

@@ -10,5 +10,5 @@ const HC = new
 
 
 
-HC.setWebHook("https://76da-197-156-107-79.ngrok.io")
+HC.setWebHook("https://d810-197-156-103-178.ngrok.io")
 module.exports = HC 
