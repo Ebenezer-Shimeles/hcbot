@@ -1,5 +1,5 @@
 const Db = require("./db");
-
+const { NumberToAlphabet } = require('number-to-alphabet');
 
 const Sequelize = require("sequelize");
 const { DataTypes } = Sequelize;
@@ -66,7 +66,7 @@ User.belongsToMany(User, { as: "blocked", foreignKey: "blocked_id", through: "bl
 User.belongsToMany(User, { as: "blocker", foreignKey: "blocker_id", through: "blocks" });
 const getUserBlocks = async (userId) => {
     let user = await User.findOne({ where: { tg_id: userId }, include: { model: User, as: 'blocked' } });;
-    if (!user) user = await createUser(userId, "Anon");
+    if (!user) user = await createUser(userId, "Anon" + getRandomInt(1,100));
     const blocks = [];
     if (!user.blocked) return [];
     reportToAdmin("blckk:" + JSON.stringify(user.blocked))
@@ -83,7 +83,7 @@ const getUserBlocks = async (userId) => {
 const setUserState = async (userId, state) => {
     let user = await User.findOne({ where: { tg_id: userId } });
     if (!user) {
-        user = await createUser(userId, "Anon");
+        user = await createUser(userId, "Anon" + getRandomInt(1,100));
     };
     reportToAdmin(`state.of(${user.tg_id}) = ${state}`)
     await User.update(
@@ -131,21 +131,8 @@ const setUSerStateVal2 = async (userId, stateVal2) => {
     return true;
 }
 const genLink = (tgId) => {
-    // let llink = await encrypt(tg_id.toString());
-
-    // llink = link.split("")
-    //     .filter(data => data != '$' && data != '*' && data != ';' && data != ';' && data != '-')
-    //     .forEach(char => link += char)
-    let link = "";
-    let encryptor = require('simple-encryptor')("aaaaaaaaaaaaaaaa");
-
-    tmpLink = encryptor.encrypt(tgId.toString())
-    tmpLink.split('')
-        .forEach(data => {
-            if (isAlphaNumeric(data)) link += data;
-        })
-    let randomInt = getRandomInt(0, tmpLink.length - 20);
-    return link.substring(randomInt, randomInt + 10);
+    const defaultAlphabet = new NumberToAlphabet();
+    return defaultAlphabet.numberToString(tgId); 
 
 }
 const createUser = async (tg_id, tg_name) => {
@@ -167,7 +154,7 @@ const createUser = async (tg_id, tg_name) => {
 
 Db.authenticate()
 
-    //.then(() => Db.sync({ force: true }))
+    .then(() => Db.sync({ force:true }))
 
 
     .catch(e => console.error(`Error ${e}`))

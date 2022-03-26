@@ -1,6 +1,7 @@
 
 const STRS = require('../strings');
 const { User, createUser } = require("../models/user");
+const { getRandomInt } = require('../utils');
 
 const startHandle = async (bot, msg) => {
 
@@ -8,7 +9,7 @@ const startHandle = async (bot, msg) => {
         where: {
             tg_id: msg.chat.id
         }
-    })) createUser(msg.chat.id, "Anon");
+    })) createUser(msg.chat.id, "Anon"+getRandomInt(1,100));
 
     bot.sendMessage(
         msg.chat.id,

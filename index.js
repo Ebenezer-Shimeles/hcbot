@@ -15,9 +15,9 @@ const myBlocksHeaders = require("./commands/myblocks");
 const helpHeaders = require("./commands/help");
 const changeMyNameHeaders = require("./commands/changename");
 
-const { User, createUser, setUserState, setUserStateVal, } = require("./models/user.js");
+const { User, createUser, setUserState, setUserStateVal,setUSerStateVal2 } = require("./models/user.js");
 
-const { reportToAdmin } = require("./utils");
+const { reportToAdmin, getRandomInt } = require("./utils");
 require("dotenv").config()
 
 const commands = { ...changeMyNameHeaders, ...helpHeaders, ...startHeaders, ...unknownHeaders, ...creditsHeaders, ...createHeaders, ...talkToHandle, ...myLinkHeaders, ...myBlocksHeaders };
@@ -57,11 +57,15 @@ registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
     //HC.sendMessage("556659349", "S");
     const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
     const otherData = callbackData.data.split(process.env.DIFF_CHAR)[1];
+    const replyTo = callbackData.data.split(process.env.DIFF_CHAR)[2];
     if (!user) return reportToAdmin("Empty reply called bro!");
     if ((!await User.findOne({ where: { tg_id: otherData } }))) HC.sendMessage(user.tg_id, "This user doesn't exist!");
     if (!await setUserState(user.tg_id, SEMSG)) return reportToAdmin("Error cannot change user state");
     if (!await setUserStateVal(user.tg_id, otherData)) return reportToAdmin("Error cannot change state val");
-    HC.sendMessage(callbackData.from.id, "Please send me the text you want to send:");
+    //the next one is to reply to make the confusion low
+    reportToAdmin(`Registerting callback father: ${replyTo}`);
+    if (!await setUSerStateVal2(user.tg_id, replyTo)) return reportToAdmin("Error cannot change state val 2");
+    HC.sendMessage(callbackData.from.id, "Please send me the message(text or image) you want to send for replying:");
 
 
 });
@@ -82,23 +86,9 @@ HC.on('callback_query', async (callbackData) => {
     const data = callbackData.data;
     const fromId = callbackData.from.id;
     let user = await User.findOne({ where: { tg_id: fromId } });
-
-    if (!user) user = await createUser(fromId, "Anon");
-
-    const keyWord = data.split(process.env.DIFF_CHAR)[0];
-
-
-    HC.sendMessage("556659349", keyWord);
-    handleCallbackKw(keyWord, { callbackData });
-
-    // if (user.state) {
-    //     HC.sendMessage(msg.chat.id, "You have a state: " + state);
-    //     handleState(await user.state, { msgData: {}, inlineData: {}, callbackData });
-    // }
-    // else {
-    //     HC.sendMessage("556659349", keyWord);
-    // }
-});
+    
+}
+);
 
 
 
@@ -147,27 +137,32 @@ registerStateHandler(SEMSG, async ({ msgData }) => {
             tg_id: user.stateVal
         }
     });
-    if (!reciever) return HC.sendMessage(msgData.chat.id, "The user does not exist!");
+    if (!reciever || !user) return HC.sendMessage(msgData.chat.id, "The user does not exist!");
 
     if (await reciever.hasBlocked(user)) {
         HC.sendMessage(msg.chat.id, "This user has blocked you!");
         return;
     }
+
     HC.sendMessage(msg.chat.id, "sent!");
+    //reportToAdmin(`reply id: ${JSON.stringify(user)}`);
+    //reportToAdmin(`${JSON.stringify(reciever)}`)
+    const replyTo = user.stateVal2 || "";
+    reportToAdmin(`replyTo ${replyTo}`);
+    if(msg.text) HC.sendMessage(reciever.tg_id,
 
-    HC.sendMessage(reciever.tg_id,
-
-        "<b>from: " + `${user.tg_name}\n</b>` +
+        "<b>from: " + `${user.tg_name}</b>\n\n` +
         `Msg: <i>${msg.text}</i>`,
 
         {
+           reply_to_message_id: replyTo,
             parse_mode: "HTML",
 
             reply_markup: {
                 inline_keyboard: [
                     [{
                         text: "Reply",
-                        callback_data: `${REPLY}${process.env.DIFF_CHAR}${user.tg_id}`
+                        callback_data: `${REPLY}${process.env.DIFF_CHAR}${user.tg_id}${process.env.DIFF_CHAR}${msg['message_id']}`
                     },
                     {
                         text: "Block This User",
@@ -176,11 +171,60 @@ registerStateHandler(SEMSG, async ({ msgData }) => {
                 ]
             }
         });
+    else if(msg.photo){
+        //HC.sendMessage(msg.chat.id, "Image");
+        const imageId = msg.photo[0]['file_id'];
+        let caption = msg.caption || "";
+
+        HC.sendPhoto(reciever.tg_id, `${imageId}`, {caption: 
+            `<i>${caption}</i>\n\n ` + 
+            "<b>from: " + `${user.tg_name}\n</b>` 
+        
+        
+        , parse_mode: "HTML", 
+        reply_to_message_id: replyTo,
+        reply_markup: {
+            inline_keyboard: [
+                [{
+                    text: "Reply",
+                    callback_data: `${REPLY}${process.env.DIFF_CHAR}${user.tg_id}`
+                },
+                {
+                    text: "Block This User",
+                    callback_data: `${BLOCK}${process.env.DIFF_CHAR}${user.tg_id}`
+                }]
+            ]}
+        }
+        );
+    }
     if (!await setUserState(user.tg_id, "")) reportToAdmin("Error cannot change user state");
 });
+
+
+
+HC.on('message',async (msg)=>{ 
+     if(msg['photo']) {  //this is the only place we use images
+         // reportToAdmin(`Image ${msg['photo'][0]['file_id']}`)
+         let user = await User.findOne({ where: { tg_id: msg.chat.id } });
+   
+         const state = user ? user.state : console.log("No state user");
+
+         ///////////////////////////////////////////////////////////////////////////////////////////////
+        if (state && state === SEMSG) {
+           HC.sendMessage(msg.chat.id, "You have a state: " + state);
+            handleState(await user.state, { msgData: msg, inlineData: {}, callbackData: {} });
+        }
+     }
+  }
+);
+
+
+
+
+
 HC.on('text', async (msg) => {
     let user = await User.findOne({ where: { tg_id: msg.chat.id } });
-    console.log("user: " + JSON.stringify(user));
+    //console.log("user: " + JSON.stringify(user));
     const state = user ? user.state : console.log("No state user");
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,7 +235,7 @@ HC.on('text', async (msg) => {
     else if (msg.text.startsWith("/start") && msg.text != "/start") {
         if (!user) {
             reportToAdmin("Doesn't exist");
-            user = await createUser(msg.chat.id, "Anon")
+            user = await createUser(msg.chat.id, "Anon" + getRandomInt(1, 100))
         }
         const payload = msg.text.split("/start")[1];
         //HC.sendMessage(msg.chat.id, "Deeplinking, " + payload);

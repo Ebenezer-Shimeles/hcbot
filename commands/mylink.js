@@ -1,5 +1,6 @@
 const { User, createUser } = require("../models/user");
-const { BOT_USERNAME } = require("../const")
+const { BOT_USERNAME } = require("../const");
+const { getRandomInt } = require("../utils");
 
 
 const myLinkHandler = async (bot, msg) => {
@@ -9,7 +10,7 @@ const myLinkHandler = async (bot, msg) => {
         }
     });
     if (!user) {
-        user = await createUser(msg.chat.id, "Anon"); //change this please
+        user = await createUser(msg.chat.id, "Anon" + getRandomInt(1,100)); //change this please
     }
     const link = user.link;
     //bot.sendMessage("dsds", {})
