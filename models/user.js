@@ -132,7 +132,15 @@ const setUSerStateVal2 = async (userId, stateVal2) => {
 }
 const genLink = (tgId) => {
     const defaultAlphabet = new NumberToAlphabet();
-    return defaultAlphabet.numberToString(tgId); 
+    const charArray = defaultAlphabet.numberToString(tgId).split("").reverse() //hide the shit! ;
+
+    let link = "";
+    charArray.forEach(char => { 
+           if(Math.ceil(Math.random() * 1000) > 250) char = char.toUpperCase(); 
+           if(Math.ceil(Math.random() * 1000) < 250) char += `${Math.floor(Math.random() * 1000)}`;
+           link+= char;
+    });
+    return link;
 
 }
 const createUser = async (tg_id, tg_name = undefined) => {
@@ -157,7 +165,7 @@ const createUser = async (tg_id, tg_name = undefined) => {
 
 Db.authenticate()
 
-    .then(() => Db.sync({ alter:true }))
+    .then(() => Db.sync({ force:true }))
 
 
     .catch(e => console.error(`Error ${e}`))

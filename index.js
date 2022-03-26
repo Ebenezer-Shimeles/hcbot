@@ -309,10 +309,13 @@ HC.on('text', async (msg) => {
     }
 })
 
-app.listen(8000, (e) => {
-    if (e) console.error("Error " + e);
-    else console.log("Listening at 8000")
-})
+setTimeout(() =>{
+
+    app.listen(8000, async (e) => {
+        if (e) console.error("Error " + e);
+        else console.log("Listening at 8000")
+    })
+}, 3)  //something is wrong here
 }catch(e){
     reportToAdmin(`Exception Found! ${e}`)
 }
