@@ -137,7 +137,8 @@ registerStateHandler(CHAGNAM, async ({ msgData }) => {
     }).then(data => {
         if (!data) return;
         else return User.update({
-            tg_name: msgData.text
+            tg_name: msgData.text,
+            state: ""
         },
             {
                 where: {
