@@ -9,7 +9,7 @@ const startHandle = async (bot, msg) => {
         where: {
             tg_id: msg.chat.id
         }
-    })) createUser(msg.chat.id, "Anon"+getRandomInt(1,100));
+    })) createUser(msg.chat.id);
 
     bot.sendMessage(
         msg.chat.id,

@@ -3,7 +3,7 @@ const { NumberToAlphabet } = require('number-to-alphabet');
 
 const Sequelize = require("sequelize");
 const { DataTypes } = Sequelize;
-const { getRandomInt, encrypt, reportToAdmin } = require("../utils")
+const { getRandomInt,  reportToAdmin } = require("../utils")
 const { isAlphaNumeric } = require("../utils");
 
 const DotEnv = require("dotenv");
@@ -66,7 +66,7 @@ User.belongsToMany(User, { as: "blocked", foreignKey: "blocked_id", through: "bl
 User.belongsToMany(User, { as: "blocker", foreignKey: "blocker_id", through: "blocks" });
 const getUserBlocks = async (userId) => {
     let user = await User.findOne({ where: { tg_id: userId }, include: { model: User, as: 'blocked' } });;
-    if (!user) user = await createUser(userId, "Anon" + getRandomInt(1,100));
+    if (!user) user = await createUser(userId);
     const blocks = [];
     if (!user.blocked) return [];
     reportToAdmin("blckk:" + JSON.stringify(user.blocked))
@@ -135,13 +135,16 @@ const genLink = (tgId) => {
     return defaultAlphabet.numberToString(tgId); 
 
 }
-const createUser = async (tg_id, tg_name) => {
+const createUser = async (tg_id, tg_name = undefined) => {
     //let link = crypto.randomBytes(5).toString("hex");
     // const salt = process.env.LINK_SALT.toString();
     //console.log(`Salt: ${salt}`)
     let link = genLink(tg_id)
+    
+    const tempId = "Anon "+ getRandomInt(1, 1000);
 
-
+    reportToAdmin(`Temporary id ${tempId}`);
+    tg_name = tg_name || tempId;
     const user = User.build({
         tg_id,
         tg_name,

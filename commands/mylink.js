@@ -10,7 +10,7 @@ const myLinkHandler = async (bot, msg) => {
         }
     });
     if (!user) {
-        user = await createUser(msg.chat.id, "Anon" + getRandomInt(1,100)); //change this please
+        user = await createUser(msg.chat.id); //change this please
     }
     const link = user.link;
     //bot.sendMessage("dsds", {})

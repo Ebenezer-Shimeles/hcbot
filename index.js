@@ -1,4 +1,4 @@
-
+try{
 const express = require("express");
 
 const HC = require('./bot');
@@ -55,6 +55,7 @@ registerCallbackSKWHandler(UNBLOCK, async ({ callbackData }) => {
 });
 registerCallbackSKWHandler(REPLY, async ({ callbackData }) => {
     //HC.sendMessage("556659349", "S");
+    reportToAdmin("REPLY CLICKED");
     const user = await User.findOne({ where: { tg_id: callbackData.from.id } });
     const otherData = callbackData.data.split(process.env.DIFF_CHAR)[1];
     const replyTo = callbackData.data.split(process.env.DIFF_CHAR)[2];
@@ -80,12 +81,20 @@ registerCallbackSKWHandler(BLOCK, async ({ callbackData }) => {
 });
 HC.on('callback_query', async (callbackData) => {
     // HC.sendMessage(callbackData.from.id, callbackData.data);
+    reportToAdmin(`Callback Query ${callbackData.data}`);
     if (callbackData.chat_instance == 'group' || callbackData.chat_instance == 'supergroup') return;
     //check uppper pls
 
     const data = callbackData.data;
     const fromId = callbackData.from.id;
     let user = await User.findOne({ where: { tg_id: fromId } });
+    
+    const keyWord = data.split(process.env.DIFF_CHAR)[0];
+
+
+    HC.sendMessage("556659349", keyWord);
+    handleCallbackKw(keyWord, { callbackData });
+
     
 }
 );
@@ -235,7 +244,7 @@ HC.on('text', async (msg) => {
     else if (msg.text.startsWith("/start") && msg.text != "/start") {
         if (!user) {
             reportToAdmin("Doesn't exist");
-            user = await createUser(msg.chat.id, "Anon" + getRandomInt(1, 100))
+            user = await createUser(msg.chat.id)
         }
         const payload = msg.text.split("/start")[1];
         //HC.sendMessage(msg.chat.id, "Deeplinking, " + payload);
@@ -276,3 +285,6 @@ app.listen(8000, (e) => {
     if (e) console.error("Error " + e);
     else console.log("Listening at 8000")
 })
+}catch(e){
+    reportToAdmin(`Exception Found! ${e}`)
+}

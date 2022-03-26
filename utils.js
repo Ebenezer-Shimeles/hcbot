@@ -4,6 +4,7 @@ require("dotenv").config();
 const HC = require("./bot");
 
 const getRandomInt = (min, max) => {
+    
     const randD = Math.random();
     const randMax = Math.ceil(randD * max);
     if (randMax < min) return min;
