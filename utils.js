@@ -40,7 +40,17 @@ function decrypt(text) {
 function reportToAdmin(msg, others = {}) {
     HC.sendMessage(process.env.ADMIN_ID, msg, others);
 }
+function escapeHtml(unsafe)
+{
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+ }
 module.exports = {
+    escapeHtml,
     encrypt,
     decrypt,
     getRandomInt,

@@ -1,9 +1,11 @@
 const Db = require("./db");
 const { NumberToAlphabet } = require('number-to-alphabet');
 
+const HC = require('../bot')
+
 const Sequelize = require("sequelize");
 const { DataTypes } = Sequelize;
-const { getRandomInt,  reportToAdmin } = require("../utils")
+const { getRandomInt,  reportToAdmin, escapeHtml } = require("../utils")
 const { isAlphaNumeric } = require("../utils");
 
 const DotEnv = require("dotenv");
@@ -143,7 +145,7 @@ const genLink = (tgId) => {
     return link;
 
 }
-const createUser = async (tg_id, tg_name = undefined) => {
+const createUser = async (tg_id, tg_name = undefined, ) => {
     //let link = crypto.randomBytes(5).toString("hex");
     // const salt = process.env.LINK_SALT.toString();
     //console.log(`Salt: ${salt}`)
@@ -155,20 +157,23 @@ const createUser = async (tg_id, tg_name = undefined) => {
     tg_name = tg_name || tempId;
     const user = User.build({
         tg_id,
-        tg_name,
+        tg_name: escapeHtml( tg_name),
         link
     });
+    setTimeout(() =>HC.sendMessage(tg_id, "Hello If you want to create your own link use /mylink command"), 5000);
     await user.save();
+
     return user;
 }
 
+// Db.sync({force: true})
 
-Db.authenticate()
+// Db.authenticate()
 
-    .then(() => Db.sync({ force:true }))
+//     .then(() => Db.sync({ force:true }))
 
 
-    .catch(e => console.error(`Error ${e}`))
+//     .catch(e => console.error(`Error ${e}`))
 
 module.exports = {
     User,

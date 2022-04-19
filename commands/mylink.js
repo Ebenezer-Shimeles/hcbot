@@ -14,9 +14,13 @@ const myLinkHandler = async (bot, msg) => {
     }
     const link = user.link;
     //bot.sendMessage("dsds", {})
-    bot.sendMessage(msg.chat.id, `Your link is: <b>${"t.me/" + BOT_USERNAME + "?start=" + link}</b>\nPut is somewhere other people can see and when they touch it you can talk through this bot(without them knowing ur real tg account)`, {
+    bot.sendMessage(msg.chat.id, `Your link is: <b>${"t.me/" + BOT_USERNAME + "?start=" + link}</b>\n\n\n<b>Put this somewhere other people can see.... and when they touch it they can talk to you  through this bot</b>(without them knowing ur real tg account)`, {
         parse_mode: "HTML"
     });
+    setTimeout(() =>{bot.sendMessage(msg.chat.id, "If you want to change ur name for this bot<b> you can change that using /changemyname command</b>",
+    {
+        parse_mode: "HTML"
+    });}, 5000)
 }
 module.exports = {
     "/mylink": myLinkHandler

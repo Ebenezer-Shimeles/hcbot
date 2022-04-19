@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const chalk = require("chalk")
 
 const STRS = require("../strings");
-const { User } = require("../models/user");
+const { User, setUserStateVal } = require("../models/user");
 const { TTGK, registerStateHandler, SEMSG } = require("./states")
 
 
@@ -39,6 +39,7 @@ const talkToHandle = async (bot, msg) => {
         });
         console.log(chalk.red("Trying to talk!"));
     }
+
 
 }
 
